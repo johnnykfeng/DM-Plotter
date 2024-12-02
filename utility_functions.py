@@ -1,12 +1,9 @@
-import streamlit as st
 import scipy.io
 import numpy as np
 import os
 import plotly.express as px
 import zipfile
 
-# folder = "S1160_shutter_closed"
-# folder = "S1160_l181_120kVp_5mA_sd755_10p8Al_0p1Cu_coll10mm_PE2_wstep"
 BIN_LABELS = [
     "20 kev",
     "30 kev",
@@ -18,9 +15,14 @@ BIN_LABELS = [
 ]
 
 
-def get_data_info(file_list, verbose=False):
+def get_data_info(file_list, verbose=False, check_mat=True):
     for file in file_list:
-        if file.endswith(".mat"):
+        if check_mat:
+            if file.endswith(".mat"):
+                mat_file = scipy.io.loadmat(file)
+            else:
+                raise ValueError(f"File {file} is not a .mat file")
+        else:
             mat_file = scipy.io.loadmat(file)
             cc_data = mat_file["cc_struct"]["data"][0][0][0][0][0]
             cc_data_msgs = [
@@ -46,6 +48,33 @@ def get_data_info(file_list, verbose=False):
 
             return cc_data_msgs, params_info
 
+def get_data_info_v2(file_list, verbose=False):
+    for file in file_list:
+
+        mat_file = scipy.io.loadmat(file)
+        cc_data = mat_file["cc_struct"]["data"][0][0][0][0][0]
+        cc_data_msgs = [
+            f"{cc_data.shape = }",
+            f"Tube currents or scan steps: {cc_data.shape[0]}",
+            f"Number of bins: {cc_data.shape[1]}",
+            f"Capture views: {cc_data.shape[2]}",
+            f"Pixel rows: {cc_data.shape[3]}",
+            f"Pixel columns: {cc_data.shape[4]}",
+        ]
+        params = mat_file["cc_struct"]["params"][0][0][0]
+        data_type = params.dtype
+
+        params_info = []
+        for d_type in data_type.names:
+            params_info.append(f"{d_type}: {params[d_type][0]}")
+
+        if verbose:
+            for msg in cc_data_msgs:
+                print(msg)
+            for p in params_info:
+                print(p)
+
+        return cc_data_msgs, params_info
 
 # create a function that unzips the files and returns the list of .mat files
 def unzip_mat_files(zip_folder):
@@ -57,23 +86,36 @@ def unzip_mat_files(zip_folder):
     return [os.path.join(unzipped_folder, f) for f in mat_filenames]
 
 
-def process_mat_files_list(bin_id, files_list):
+def process_mat_files_list(bin_id, files_list, file_check=True):
     count_maps_A0 = []
     count_maps_A1 = []
 
     for file in files_list:
-        if file.endswith(".mat"):
+        if file_check:
+            if file.endswith(".mat"):
+                mat_file = scipy.io.loadmat(file)
+                cc_data = mat_file["cc_struct"]["data"][0][0][0][0][0]
+                cc_data = np.mean(cc_data, axis=2)
+                count_map = cc_data[0, bin_id, :, :]
+
+                if file.endswith("A0.mat"):
+                    count_map = np.flip(count_map, axis=0)
+                    count_map = np.flip(count_map, axis=1)
+                    count_maps_A0.append(count_map)
+                if file.endswith("A1.mat"):
+                    count_maps_A1.append(count_map)
+                
+        else:
             mat_file = scipy.io.loadmat(file)
             cc_data = mat_file["cc_struct"]["data"][0][0][0][0][0]
-
             cc_data = np.mean(cc_data, axis=2)
             count_map = cc_data[0, bin_id, :, :]
 
-            if file.endswith("A0.mat"):
+            if file.name.endswith("A0.mat"):
                 count_map = np.flip(count_map, axis=0)
                 count_map = np.flip(count_map, axis=1)
                 count_maps_A0.append(count_map)
-            if file.endswith("A1.mat"):
+            if file.name.endswith("A1.mat"):
                 count_maps_A1.append(count_map)
 
     count_maps_A0 = np.array(count_maps_A0)
@@ -83,6 +125,7 @@ def process_mat_files_list(bin_id, files_list):
     full_count_map = np.concatenate([count_maps_A0_comb, count_maps_A1_comb], axis=1)
 
     return count_maps_A0, count_maps_A1, full_count_map
+
 
 
 def process_mat_files(bin_id, folder):

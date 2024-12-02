@@ -8,7 +8,6 @@ import plotly.express as px
 from utility_functions import (
     BIN_LABELS,
     get_data_info,
-    get_data_info_v2,
     process_mat_files_list,
     create_plotly_heatmaps,
 )
@@ -37,7 +36,7 @@ if uploaded_files:
     # st.write(file_type)
     # print(file_type)
     with st.expander("Metadata", expanded=False):
-        msgs, params = get_data_info_v2(extracted_files)
+        msgs, params = get_data_info(extracted_files, check_mat=False)
         for msg in msgs:
             st.write(msg)
         for p in params:
