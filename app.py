@@ -3,7 +3,7 @@ import zipfile
 import os
 import tempfile
 import numpy as np
-import os
+import scipy.io
 import plotly.express as px
 from utility_functions import (
     BIN_LABELS,
@@ -12,8 +12,10 @@ from utility_functions import (
     create_plotly_heatmaps,
 )
 
-# File uploader for ZIP files
-uploaded_file = st.file_uploader("Upload a ZIP file", type="zip")
+# File uploader for multiple files
+uploaded_files = st.file_uploader(
+    "Upload all the MAT files", accept_multiple_files=True, type=["mat"]
+)
 
 
 @st.cache_data
@@ -25,48 +27,39 @@ def create_heatmap(full_count_map, color_range):
     return heatmap_fig
 
 
-if uploaded_file is not None:
-    st.write("Processing uploaded ZIP file...")
-    # Use a temporary directory to store the ZIP file and its contents
-    with tempfile.TemporaryDirectory() as temp_dir:
-        # Save the uploaded ZIP file
-        zip_path = os.path.join(temp_dir, "temp.zip")
-        with open(zip_path, "wb") as f:
-            f.write(uploaded_file.getbuffer())
+if uploaded_files:
+    st.write(f"Processing {len(uploaded_files)} uploaded files...")
 
-        # Unzip the contents while preserving folder structure
-        with zipfile.ZipFile(zip_path, "r") as zip_ref:
-            zip_ref.extractall(temp_dir)
+    st.write(uploaded_files[0].name)
+    extracted_files = [file for file in uploaded_files]
+    file_type = type(extracted_files[0])
+    # st.write(file_type)
+    # print(file_type)
+    with st.expander("Metadata", expanded=False):
+        msgs, params = get_data_info(extracted_files, check_mat=False)
+        for msg in msgs:
+            st.write(msg)
+        for p in params:
+            st.write(p)
 
-            # Get a list of all extracted files and folders
-            extracted_files = []
-            for root, dirs, files in os.walk(temp_dir):
-                extracted_files.extend([os.path.join(root, name) for name in files])
+    with st.expander("Extracted files and folders", expanded=False):
+        # st.write(f"{extracted_files = }")
+        for file in extracted_files:
+            st.write(file.name)
 
-            # Display the extracted files and folders
-            with st.expander("Extracted files and folders", expanded=False):
-                st.write(f"{extracted_files = }")
+    for i, bin_id in enumerate(range(7)):
+        _, _, full_count_map = process_mat_files_list(
+            bin_id, extracted_files, file_check=False
+        )
 
-            with st.expander("Metadata", expanded=False):
-                msgs, params_info = get_data_info(extracted_files, verbose=False)
-                for msg in msgs:
-                    st.write(msg)
-                for p in params_info:
-                    st.write(p)
+        color_min, color_max = np.percentile(full_count_map, [1, 99.5])
 
-            for i, bin_id in enumerate(range(7)):
-                _, _, full_count_map = process_mat_files_list(bin_id, extracted_files)
+        with st.expander(f"{BIN_LABELS[bin_id]}", expanded=True):
+            color_range = st.slider(
+                "Color range", 0.0, color_max * 2, (color_min, color_max)
+            )
 
-                color_min, color_max = np.percentile(full_count_map, [1, 99.5])
-
-                with st.expander(f"{BIN_LABELS[bin_id]}", expanded=True):
-                    color_range = st.slider(
-                        "Color range", 0.0, color_max * 2, (color_min, color_max)
-                    )
-
-                    heatmap_fig = create_heatmap(full_count_map, color_range)
-                    heatmap_fig.update_layout(title=f"{BIN_LABELS[bin_id]}")
-                    heatmap_fig.update_layout(autosize=False, width=400, height=600)
-                    st.plotly_chart(heatmap_fig, key=f"heatmap_{i}")
-
-    # The temporary directory and its contents are automatically cleaned up here
+            heatmap_fig = create_heatmap(full_count_map, color_range)
+            heatmap_fig.update_layout(title=f"{BIN_LABELS[bin_id]}")
+            heatmap_fig.update_layout(autosize=False, width=400, height=600)
+            st.plotly_chart(heatmap_fig, key=f"heatmap_{i}")

@@ -17,36 +17,38 @@ BIN_LABELS = [
 
 def get_data_info(file_list, verbose=False, check_mat=True):
     for file in file_list:
-        if check_mat:
+        if not check_mat:
+            mat_file = scipy.io.loadmat(file)
+        else:
             if file.endswith(".mat"):
+                print("matfile loaded")
                 mat_file = scipy.io.loadmat(file)
             else:
-                raise ValueError(f"File {file} is not a .mat file")
-        else:
-            mat_file = scipy.io.loadmat(file)
-            cc_data = mat_file["cc_struct"]["data"][0][0][0][0][0]
-            cc_data_msgs = [
-                f"{cc_data.shape = }",
-                f"Tube currents or scan steps: {cc_data.shape[0]}",
-                f"Number of bins: {cc_data.shape[1]}",
-                f"Capture views: {cc_data.shape[2]}",
-                f"Pixel rows: {cc_data.shape[3]}",
-                f"Pixel columns: {cc_data.shape[4]}",
-            ]
-            params = mat_file["cc_struct"]["params"][0][0][0]
-            data_type = params.dtype
+                continue
+            
+        cc_data = mat_file["cc_struct"]["data"][0][0][0][0][0]
+        cc_data_msgs = [
+            f"{cc_data.shape = }",
+            f"Tube currents or scan steps: {cc_data.shape[0]}",
+            f"Number of bins: {cc_data.shape[1]}",
+            f"Capture views: {cc_data.shape[2]}",
+            f"Pixel rows: {cc_data.shape[3]}",
+            f"Pixel columns: {cc_data.shape[4]}",
+        ]
+        params = mat_file["cc_struct"]["params"][0][0][0]
+        data_type = params.dtype
 
-            params_info = []
-            for d_type in data_type.names:
-                params_info.append(f"{d_type}: {params[d_type][0]}")
+        params_info = []
+        for d_type in data_type.names:
+            params_info.append(f"{d_type}: {params[d_type][0]}")
 
-            if verbose:
-                for msg in cc_data_msgs:
-                    print(msg)
-                for p in params_info:
-                    print(p)
+        if verbose:
+            for msg in cc_data_msgs:
+                print(msg)
+            for p in params_info:
+                print(p)
 
-            return cc_data_msgs, params_info
+        return cc_data_msgs, params_info
 
 def get_data_info_v2(file_list, verbose=False):
     for file in file_list:
