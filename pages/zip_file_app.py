@@ -12,6 +12,8 @@ from utility_functions import (
     create_plotly_heatmaps,
 )
 
+st.write("### Drag and drop or upload a ZIP file to use this app.")
+
 # File uploader for ZIP files
 uploaded_file = st.file_uploader("Upload a ZIP file", type="zip")
 

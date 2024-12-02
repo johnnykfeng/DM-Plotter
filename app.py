@@ -12,6 +12,8 @@ from utility_functions import (
     create_plotly_heatmaps,
 )
 
+st.write("### Drag and drop or upload all the MAT files to use this app.")
+
 # File uploader for multiple files
 uploaded_files = st.file_uploader(
     "Upload all the MAT files", accept_multiple_files=True, type=["mat"]
