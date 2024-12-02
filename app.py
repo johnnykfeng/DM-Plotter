@@ -51,19 +51,29 @@ if uploaded_files:
     def bin_id_to_label(bin_id):
         return BIN_LABELS[bin_id]
 
-    bin_selection = st.multiselect(
-        "Select bins",
-        [0, 1, 2, 3, 4, 5, 6],
-        default=[0, 1, 2, 3, 4, 5, 6],
-        format_func=bin_id_to_label,
-    )
+    with st.sidebar:
+        bin_selection = st.multiselect(
+            "Select bins",
+            [0, 1, 2, 3, 4, 5, 6],
+            default=[0, 1, 2, 3, 4, 5, 6],
+            format_func=bin_id_to_label,
+        )
+
+        color_pctl_0 = st.slider(
+            "Lower color range by percentile", 0.0, 5.0, (1.0)
+        )
+        color_pctl_1 = st.slider(
+            "Upper color range by percentile", 95.0, 99.9, (99.5)
+        )
 
     for i, bin_id in enumerate(bin_selection):
         _, _, full_count_map = process_mat_files_list(
             bin_id, extracted_files, file_check=False
         )
 
-        color_min, color_max = np.percentile(full_count_map, [1, 99.5])
+        color_min, color_max = np.percentile(
+            full_count_map, [color_pctl_0, color_pctl_1]
+        )
 
         # with st.expander(f"{BIN_LABELS[bin_id]}", expanded=True):
         st.header(f"{BIN_LABELS[bin_id]}")
