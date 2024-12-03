@@ -25,7 +25,7 @@ def get_data_info(file_list, verbose=False, check_mat=True):
                 mat_file = scipy.io.loadmat(file)
             else:
                 continue
-            
+
         cc_data = mat_file["cc_struct"]["data"][0][0][0][0][0]
         cc_data_msgs = [
             f"{cc_data.shape = }",
@@ -49,6 +49,7 @@ def get_data_info(file_list, verbose=False, check_mat=True):
                 print(p)
 
         return cc_data_msgs, params_info
+
 
 def get_data_info_v2(file_list, verbose=False):
     for file in file_list:
@@ -79,12 +80,16 @@ def get_data_info_v2(file_list, verbose=False):
         return cc_data_msgs, params_info
 
 # create a function that unzips the files and returns the list of .mat files
+
+
 def unzip_mat_files(zip_folder):
     parent_dir = os.path.dirname(zip_folder)
     with zipfile.ZipFile(zip_folder, "r") as zip_ref:
         zip_ref.extractall(parent_dir)
-    unzipped_folder = zip_folder.replace(".zip", "")  # remove the .zip extension
-    mat_filenames = [f for f in os.listdir(unzipped_folder) if f.endswith(".mat")]
+    unzipped_folder = zip_folder.replace(
+        ".zip", "")  # remove the .zip extension
+    mat_filenames = [f for f in os.listdir(
+        unzipped_folder) if f.endswith(".mat")]
     return [os.path.join(unzipped_folder, f) for f in mat_filenames]
 
 
@@ -106,7 +111,7 @@ def process_mat_files_list(bin_id, files_list, file_check=True):
                     count_maps_A0.append(count_map)
                 if file.endswith("A1.mat"):
                     count_maps_A1.append(count_map)
-                
+
         else:
             mat_file = scipy.io.loadmat(file)
             cc_data = mat_file["cc_struct"]["data"][0][0][0][0][0]
@@ -124,10 +129,10 @@ def process_mat_files_list(bin_id, files_list, file_check=True):
 
     count_maps_A0_comb = np.concatenate(count_maps_A0, axis=0)
     count_maps_A1_comb = np.concatenate(count_maps_A1, axis=0)
-    full_count_map = np.concatenate([count_maps_A0_comb, count_maps_A1_comb], axis=1)
+    full_count_map = np.concatenate(
+        [count_maps_A0_comb, count_maps_A1_comb], axis=1)
 
     return count_maps_A0, count_maps_A1, full_count_map
-
 
 
 def process_mat_files(bin_id, folder):
@@ -159,7 +164,8 @@ def process_mat_files(bin_id, folder):
 
     count_maps_A0_comb = np.concatenate(count_maps_A0, axis=0)
     count_maps_A1_comb = np.concatenate(count_maps_A1, axis=0)
-    full_count_map = np.concatenate([count_maps_A0_comb, count_maps_A1_comb], axis=1)
+    full_count_map = np.concatenate(
+        [count_maps_A0_comb, count_maps_A1_comb], axis=1)
 
     return count_maps_A0, count_maps_A1, full_count_map
 
@@ -215,13 +221,13 @@ def clean_ncp(
     return full_count_map
 
 
-def create_plotly_heatmaps(map, color_range=None, figsize=None):
+def create_plotly_heatmaps(map, color_range=None, colormap="Viridis", figsize=None):
     if color_range is None:
         color_range = [np.min(map), np.max(map)]
 
     fig = px.imshow(
         map,
-        color_continuous_scale="Viridis",
+        color_continuous_scale=colormap,
         range_color=color_range,
         labels=dict(x="x", y="y", color="value"),
     )
