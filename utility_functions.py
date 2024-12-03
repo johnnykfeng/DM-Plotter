@@ -27,61 +27,29 @@ def get_data_info(file_list, verbose=False, check_mat=True):
                 continue
 
         cc_data = mat_file["cc_struct"]["data"][0][0][0][0][0]
-        cc_data_msgs = [
-            f"{cc_data.shape = }",
-            f"Tube currents or scan steps: {cc_data.shape[0]}",
-            f"Number of bins: {cc_data.shape[1]}",
-            f"Capture views: {cc_data.shape[2]}",
-            f"Pixel rows: {cc_data.shape[3]}",
-            f"Pixel columns: {cc_data.shape[4]}",
-        ]
+        cc_data_dict = {
+            "Tube currents or scan steps": cc_data.shape[0],
+            "Number of bins": cc_data.shape[1],
+            "Capture views": cc_data.shape[2],
+            "Pixel rows": cc_data.shape[3],
+            "Pixel columns": cc_data.shape[4],
+        }
         params = mat_file["cc_struct"]["params"][0][0][0]
-        data_type = params.dtype
 
-        params_info = []
-        for d_type in data_type.names:
-            params_info.append(f"{d_type}: {params[d_type][0]}")
+        params_info = {}
+        for d_type in params.dtype.names:
+            params_info[d_type] = params[d_type][0]
 
         if verbose:
-            for msg in cc_data_msgs:
+            for msg in cc_data_dict.values():
                 print(msg)
-            for p in params_info:
+            for p in params_info.values():
                 print(p)
 
-        return cc_data_msgs, params_info
+        return cc_data_dict, params_info, params
 
-
-def get_data_info_v2(file_list, verbose=False):
-    for file in file_list:
-
-        mat_file = scipy.io.loadmat(file)
-        cc_data = mat_file["cc_struct"]["data"][0][0][0][0][0]
-        cc_data_msgs = [
-            f"{cc_data.shape = }",
-            f"Tube currents or scan steps: {cc_data.shape[0]}",
-            f"Number of bins: {cc_data.shape[1]}",
-            f"Capture views: {cc_data.shape[2]}",
-            f"Pixel rows: {cc_data.shape[3]}",
-            f"Pixel columns: {cc_data.shape[4]}",
-        ]
-        params = mat_file["cc_struct"]["params"][0][0][0]
-        data_type = params.dtype
-
-        params_info = []
-        for d_type in data_type.names:
-            params_info.append(f"{d_type}: {params[d_type][0]}")
-
-        if verbose:
-            for msg in cc_data_msgs:
-                print(msg)
-            for p in params_info:
-                print(p)
-
-        return cc_data_msgs, params_info
 
 # create a function that unzips the files and returns the list of .mat files
-
-
 def unzip_mat_files(zip_folder):
     parent_dir = os.path.dirname(zip_folder)
     with zipfile.ZipFile(zip_folder, "r") as zip_ref:
@@ -135,7 +103,7 @@ def process_mat_files_list(bin_id, files_list, file_check=True):
     return count_maps_A0, count_maps_A1, full_count_map
 
 
-def process_mat_files(bin_id, folder):
+def process_mat_files_folder(bin_id, folder):
     count_maps_A0 = []
     count_maps_A1 = []
 
@@ -271,3 +239,31 @@ def create_heatmaps_w_boxes(
     fig.update_layout(autosize=False, width=figsize[0], height=figsize[1])
 
     return fig
+
+# def get_data_info_v2(file_list, verbose=False):
+#     for file in file_list:
+
+#         mat_file = scipy.io.loadmat(file)
+#         cc_data = mat_file["cc_struct"]["data"][0][0][0][0][0]
+#         cc_data_dict = {
+#             "cc_data_shape": cc_data.shape,
+#             "Tube currents or scan steps": cc_data.shape[0],
+#             "Number of bins": cc_data.shape[1],
+#             "Capture views": cc_data.shape[2],
+#             "Pixel rows": cc_data.shape[3],
+#             "Pixel columns": cc_data.shape[4],
+#         }
+#         params = mat_file["cc_struct"]["params"][0][0][0]
+#         data_type = params.dtype
+
+#         params_info = []
+#         for d_type in data_type.names:
+#             params_info.append(f"{d_type}: {params[d_type][0]}")
+
+#         if verbose:
+#             for msg in cc_data_dict.values():
+#                 print(msg)
+#             for p in params_info:
+#                 print(p)
+
+#         return cc_data_dict, params_info

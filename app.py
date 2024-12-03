@@ -40,11 +40,11 @@ if uploaded_files:
     file_type = type(extracted_files[0])
 
     with st.expander("Metadata", expanded=False):
-        msgs, params = get_data_info(extracted_files, check_mat=False)
-        for msg in msgs:
-            st.write(msg)
-        for p in params:
-            st.write(p)
+        msgs, params_info, params = get_data_info(extracted_files, check_mat=False)
+        st.write("**cc_data_shape**")
+        st.write(msgs)
+        st.write("**params_info**")
+        st.write(params_info)
 
     with st.expander("Extracted files and folders", expanded=False):
         # st.write(f"{extracted_files = }")
