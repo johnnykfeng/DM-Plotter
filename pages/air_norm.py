@@ -1,13 +1,10 @@
 import streamlit as st
-import zipfile
 import os
-import tempfile
 import numpy as np
 import scipy.io
 import plotly.express as px
 from utility_functions import (
     BIN_LABELS,
-    get_data_info,
     process_mat_files_list,
     create_plotly_heatmaps,
 )

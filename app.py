@@ -1,7 +1,4 @@
 import streamlit as st
-import zipfile
-import os
-import tempfile
 import numpy as np
 import scipy.io
 import plotly.express as px
