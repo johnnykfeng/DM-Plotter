@@ -17,16 +17,39 @@ uploaded_files = st.file_uploader(
 )
 
 
+def bin_id_to_label(bin_id):
+    return BIN_LABELS[bin_id]
+
+
 @st.cache_data
 def create_heatmap(full_count_map, color_range, colormap="Viridis", invert_color=False):
     if invert_color:
-        colormap = colormap + '_r'
+        colormap = colormap + "_r"
     heatmap_fig = create_plotly_heatmaps(
         full_count_map,
         color_range=color_range,
         colormap=colormap,
     )
     return heatmap_fig
+
+
+@st.cache_data
+def cached_process_mat_files_list(bin_id, mat_files, file_check=False):
+    return process_mat_files_list(bin_id, mat_files, file_check)
+
+
+with st.sidebar:
+    colormap = st.radio("Colormap", ["Viridis", "Jet", "Plasma", "Magma"])
+    invert_color = st.checkbox("Invert color")
+    bin_selection = st.multiselect(
+        "Select bins",
+        [0, 1, 2, 3, 4, 5, 6],
+        default=[0, 1, 2, 3, 4, 5, 6],
+        format_func=bin_id_to_label,
+    )
+
+    color_pctl_0 = st.slider("Lower color range by percentile", 0.0, 5.0, (1.0))
+    color_pctl_1 = st.slider("Upper color range by percentile", 95.0, 99.9, (99.5))
 
 
 if uploaded_files:
@@ -48,28 +71,8 @@ if uploaded_files:
         for file in extracted_files:
             st.write(file.name)
 
-    def bin_id_to_label(bin_id):
-        return BIN_LABELS[bin_id]
-
-    with st.sidebar:
-        colormap = st.radio("Colormap", ["Viridis", "Jet", "Plasma", "Magma"])
-        invert_color = st.checkbox("Invert color")
-        bin_selection = st.multiselect(
-            "Select bins",
-            [0, 1, 2, 3, 4, 5, 6],
-            default=[0, 1, 2, 3, 4, 5, 6],
-            format_func=bin_id_to_label,
-        )
-
-        color_pctl_0 = st.slider(
-            "Lower color range by percentile", 0.0, 5.0, (1.0)
-        )
-        color_pctl_1 = st.slider(
-            "Upper color range by percentile", 95.0, 99.9, (99.5)
-        )
-
     for i, bin_id in enumerate(bin_selection):
-        _, _, full_count_map = process_mat_files_list(
+        _, _, full_count_map = cached_process_mat_files_list(
             bin_id, extracted_files, file_check=False
         )
 
@@ -82,6 +85,8 @@ if uploaded_files:
             "Color range", 0.0, color_max * 2, (color_min, color_max)
         )
 
-        heatmap_fig = create_heatmap(full_count_map, color_range, colormap, invert_color)
+        heatmap_fig = create_heatmap(
+            full_count_map, color_range, colormap, invert_color
+        )
         heatmap_fig.update_layout(autosize=False, width=400, height=600)
         st.plotly_chart(heatmap_fig, key=f"heatmap_{bin_id}")
