@@ -48,6 +48,8 @@ with st.sidebar:
     color_pctl_1 = st.slider(
         "Upper color range by percentile", 95.0, 99.9, (99.5)
     )
+    fig_width = st.slider("Figure width", 100, 1000, 400)
+    fig_height = st.slider("Figure height", 100, 1000, 600)
 
 cols = st.columns(3)
 with cols[0]:
@@ -93,7 +95,7 @@ with cols[0]:
                 test_count_map, color_range, colormap, invert_color
             )
             heatmap_fig.update_layout(title=f"{BIN_LABELS[bin_id]}")
-            heatmap_fig.update_layout(autosize=True, width=400, height=600)
+            heatmap_fig.update_layout(autosize=False, width=fig_width, height=fig_height)
             st.plotly_chart(heatmap_fig, key=f"heatmap_testdata_{bin_id}")
 
     else:
@@ -126,7 +128,7 @@ with cols[1]:
                 air_norm_count_map, color_range, colormap, invert_color
             )
             heatmap_fig.update_layout(title=f"{BIN_LABELS[bin_id]}")
-            heatmap_fig.update_layout(autosize=True, width=400, height=600)
+            heatmap_fig.update_layout(autosize=False, width=fig_width, height=fig_height)
             st.plotly_chart(heatmap_fig, key=f"heatmap_airnorm_{bin_id}")
     else:
         st.warning("Upload air norm data")
@@ -166,7 +168,7 @@ with cols[2]:
                 heatmap_fig = create_heatmap(
                     normalized_count_map, color_range, colormap, invert_color)
                 heatmap_fig.update_layout(title=f"{BIN_LABELS[bin_id]}")
-                heatmap_fig.update_layout(autosize=True, width=400, height=600)
+                heatmap_fig.update_layout(autosize=False, width=fig_width, height=fig_height)
                 st.plotly_chart(heatmap_fig, key=f"heatmap_normalized_{bin_id}")
     else:
         st.warning("Upload both test data and air norm data")
