@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
-import scipy.io
+
+# import scipy.io
 import plotly.express as px
 from utility_functions import (
     BIN_LABELS,
@@ -8,6 +9,13 @@ from utility_functions import (
     process_mat_files_list,
     create_plotly_heatmaps,
 )
+
+st.set_page_config(
+    page_title="Basic MAT file viewer",
+    page_icon=":computer:",
+    layout="centered",
+)
+
 
 st.write("### Drag and drop or upload all the MAT files to use this app.")
 
