@@ -16,10 +16,12 @@ st.set_page_config(
 )
 
 st.title("Apply Air Normalization")
+if st.button("Clear Uploaded Data", key="clear_data_1"):
+    st.rerun()
 
 
 @st.cache_data
-def create_heatmap(full_count_map, color_range, colormap="Viridis", invert_color=False):
+def cached_create_heatmap(full_count_map, color_range, colormap="Viridis", invert_color=False):
     if invert_color:
         colormap = colormap + "_r"
     heatmap_fig = create_plotly_heatmaps(
@@ -52,8 +54,11 @@ with st.sidebar:
     color_pctl_1 = st.slider(
         "Upper color range by percentile", 95.0, 99.9, (99.5)
     )
-    fig_width = st.slider("Figure width", 100, 1000, 400)
+    # fig_width = st.slider("Figure width", 100, 1000, 400)
     fig_height = st.slider("Figure height", 100, 1000, 600)
+    
+    if st.button("Clear Uploaded Data", key="clear_data_2"):
+        st.rerun()
 
 cols = st.columns(3)
 with cols[0]:
@@ -61,6 +66,7 @@ with cols[0]:
     test_data = st.file_uploader(
         "Upload test data", accept_multiple_files=True, type=["mat"]
     )
+
 with cols[1]:
     st.header("Air norm data")
     air_norm_data = st.file_uploader(
@@ -95,11 +101,11 @@ with cols[0]:
                 key = f"testdata_color_range_{bin_id}"
             )
 
-            heatmap_fig = create_heatmap(
+            heatmap_fig = cached_create_heatmap(
                 test_count_map, color_range, colormap, invert_color
             )
             heatmap_fig.update_layout(title=f"{BIN_LABELS[bin_id]}")
-            heatmap_fig.update_layout(autosize=False, width=fig_width, height=fig_height)
+            heatmap_fig.update_layout(autosize=False, width=400, height=fig_height)
             st.plotly_chart(heatmap_fig, key=f"heatmap_testdata_{bin_id}")
 
     else:
@@ -128,11 +134,11 @@ with cols[1]:
                 key=f"airnorm_color_range_{bin_id}"
             )
 
-            heatmap_fig = create_heatmap(
+            heatmap_fig = cached_create_heatmap(
                 air_norm_count_map, color_range, colormap, invert_color
             )
             heatmap_fig.update_layout(title=f"{BIN_LABELS[bin_id]}")
-            heatmap_fig.update_layout(autosize=False, width=fig_width, height=fig_height)
+            heatmap_fig.update_layout(autosize=False, width=400, height=fig_height)
             st.plotly_chart(heatmap_fig, key=f"heatmap_airnorm_{bin_id}")
     else:
         st.warning("Upload air norm data")
@@ -169,10 +175,10 @@ with cols[2]:
                     key=f"normalized_color_range_{bin_id}"
                 )
 
-                heatmap_fig = create_heatmap(
+                heatmap_fig = cached_create_heatmap(
                     normalized_count_map, color_range, colormap, invert_color)
                 heatmap_fig.update_layout(title=f"{BIN_LABELS[bin_id]}")
-                heatmap_fig.update_layout(autosize=False, width=fig_width, height=fig_height)
+                heatmap_fig.update_layout(autosize=False, width=400, height=fig_height)
                 st.plotly_chart(heatmap_fig, key=f"heatmap_normalized_{bin_id}")
     else:
         st.warning("Upload both test data and air norm data")
