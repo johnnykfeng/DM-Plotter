@@ -8,6 +8,7 @@ from utility_functions import (
     process_mat_files_list,
     create_plotly_heatmaps,
 )
+from config import MM_ORDER
 
 st.set_page_config(
     page_title="Apply Air Normalization",
@@ -21,7 +22,9 @@ if st.button("Clear Uploaded Data", key="clear_data_1"):
 
 
 @st.cache_data
-def cached_create_heatmap(full_count_map, color_range, colormap="Viridis", invert_color=False):
+def cached_create_heatmap(
+    full_count_map, color_range, colormap="Viridis", invert_color=False
+):
     if invert_color:
         colormap = colormap + "_r"
     heatmap_fig = create_plotly_heatmaps(
@@ -31,15 +34,27 @@ def cached_create_heatmap(full_count_map, color_range, colormap="Viridis", inver
     )
     return heatmap_fig
 
+
 @st.cache_data
-def cached_process_mat_files_list(bin_id, mat_files, file_check=False):
-    return process_mat_files_list(bin_id, mat_files, file_check)
+def cached_process_mat_files_list(bin_id, mat_files, file_check=False, area_correction=False):
+    return process_mat_files_list(bin_id, mat_files, file_check, area_correction)
 
 
 def bin_id_to_label(bin_id):
     return BIN_LABELS[bin_id]
 
+
+def sort_module_order(files, module_order=MM_ORDER):
+    files.sort(
+        key=lambda x: module_order.index(x.name.split("-")[0])
+        if x.name.split("-")[0] in module_order
+        else ValueError("File not in module order")
+    )
+    return files
+
+
 with st.sidebar:
+    area_correction_checkbox = st.checkbox("Apply area correction")
     colormap = st.radio("Colormap", ["Viridis", "Jet", "Plasma", "Magma"])
     invert_color = st.checkbox("Invert color")
     bin_selection = st.multiselect(
@@ -48,15 +63,11 @@ with st.sidebar:
         default=[6],
         format_func=bin_id_to_label,
     )
-    color_pctl_0 = st.slider(
-        "Lower color range by percentile", 0.0, 5.0, (1.0)
-    )
-    color_pctl_1 = st.slider(
-        "Upper color range by percentile", 95.0, 99.9, (99.5)
-    )
+    color_pctl_0 = st.slider("Lower color range by percentile", 0.0, 5.0, (1.0))
+    color_pctl_1 = st.slider("Upper color range by percentile", 95.0, 99.9, (99.5))
     # fig_width = st.slider("Figure width", 100, 1000, 400)
     fig_height = st.slider("Figure height", 100, 1000, 600)
-    
+
     if st.button("Clear Uploaded Data", key="clear_data_2"):
         st.rerun()
 
@@ -82,6 +93,7 @@ with cols[0]:
         # st.write("Files uploaded successfully")
         with st.spinner("**PROCESSING FILES...**"):
             test_files = [file for file in test_data]
+            test_files = sort_module_order(test_files)
 
         with st.expander("Extracted files and folders", expanded=False):
             for file in test_files:
@@ -89,7 +101,7 @@ with cols[0]:
 
         for i, bin_id in enumerate(bin_selection):
             _, _, test_count_map = cached_process_mat_files_list(
-                bin_id, test_files, file_check=False
+                bin_id, test_files, file_check=False, area_correction=area_correction_checkbox
             )
 
             color_min, color_max = np.percentile(
@@ -97,8 +109,11 @@ with cols[0]:
             )
 
             color_range = st.slider(
-                "Color range", 0.0, color_max * 2, (color_min, color_max),
-                key = f"testdata_color_range_{bin_id}"
+                "Color range",
+                0.0,
+                color_max * 2,
+                (color_min, color_max),
+                key=f"testdata_color_range_{bin_id}",
             )
 
             heatmap_fig = cached_create_heatmap(
@@ -115,14 +130,15 @@ with cols[1]:
     if air_norm_data:
         with st.spinner("**PROCESSING FILES...**"):
             air_norm_files = [file for file in air_norm_data]
+            air_norm_files = sort_module_order(air_norm_files)
 
         with st.expander("Extracted files and folders", expanded=False):
             for file in air_norm_files:
                 st.write(file.name)
-        
+
         for i, bin_id in enumerate(bin_selection):
             _, _, air_norm_count_map = cached_process_mat_files_list(
-                bin_id, air_norm_files, file_check=False
+                bin_id, air_norm_files, file_check=False, area_correction=area_correction_checkbox
             )
 
             color_min, color_max = np.percentile(
@@ -130,8 +146,11 @@ with cols[1]:
             )
 
             color_range = st.slider(
-                "Color range", 0.0, color_max * 2, (color_min, color_max),
-                key=f"airnorm_color_range_{bin_id}"
+                "Color range",
+                0.0,
+                color_max * 2,
+                (color_min, color_max),
+                key=f"airnorm_color_range_{bin_id}",
             )
 
             heatmap_fig = cached_create_heatmap(
@@ -142,7 +161,7 @@ with cols[1]:
             st.plotly_chart(heatmap_fig, key=f"heatmap_airnorm_{bin_id}")
     else:
         st.warning("Upload air norm data")
-        
+
 with cols[2]:
     if test_data and air_norm_data:
         st.write("Dividing test data by air norm data")
@@ -151,17 +170,16 @@ with cols[2]:
         with st.spinner("**PROCESSING FILES...**"):
             for i, bin_id in enumerate(bin_selection):
                 _, _, test_count_map = cached_process_mat_files_list(
-                    bin_id, test_files, file_check=False
+                    bin_id, test_files, file_check=False, area_correction=area_correction_checkbox
                 )
                 _, _, air_norm_count_map = cached_process_mat_files_list(
-                    bin_id, air_norm_files, file_check=False
+                    bin_id, air_norm_files, file_check=False, area_correction=area_correction_checkbox
                 )
-                
+
                 # avoid division by zero
                 air_norm_count_map[air_norm_count_map == 0] = 1
 
-                normalized_count_map = np.divide(
-                    test_count_map, air_norm_count_map)
+                normalized_count_map = np.divide(test_count_map, air_norm_count_map)
 
                 # replace nans with 0
                 normalized_count_map = np.nan_to_num(normalized_count_map)
@@ -171,12 +189,16 @@ with cols[2]:
                 )
 
                 color_range = st.slider(
-                    "Color range", 0.0, color_max * 2, (color_min, color_max),
-                    key=f"normalized_color_range_{bin_id}"
+                    "Color range",
+                    0.0,
+                    color_max * 2,
+                    (color_min, color_max),
+                    key=f"normalized_color_range_{bin_id}",
                 )
 
                 heatmap_fig = cached_create_heatmap(
-                    normalized_count_map, color_range, colormap, invert_color)
+                    normalized_count_map, color_range, colormap, invert_color
+                )
                 heatmap_fig.update_layout(title=f"{BIN_LABELS[bin_id]}")
                 heatmap_fig.update_layout(autosize=False, width=400, height=fig_height)
                 st.plotly_chart(heatmap_fig, key=f"heatmap_normalized_{bin_id}")
