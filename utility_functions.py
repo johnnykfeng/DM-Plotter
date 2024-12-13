@@ -3,16 +3,10 @@ import numpy as np
 import os
 import plotly.express as px
 import zipfile
+from config import BIN_LABELS, MM_ORDER
 
-BIN_LABELS = [
-    "20 kev",
-    "30 kev",
-    "50 kev",
-    "70 kev",
-    "90 kev",
-    "120 kev",
-    "Sum CC1-CC5",
-]
+pixel_area = scipy.io.loadmat(r"pixel_area_xmed.mat")["pixel_area"]
+pixel_area_norm = pixel_area / np.max(pixel_area)
 
 
 def get_data_info(file_list, verbose=False, check_mat=True):
@@ -54,14 +48,14 @@ def unzip_mat_files(zip_folder):
     parent_dir = os.path.dirname(zip_folder)
     with zipfile.ZipFile(zip_folder, "r") as zip_ref:
         zip_ref.extractall(parent_dir)
-    unzipped_folder = zip_folder.replace(
-        ".zip", "")  # remove the .zip extension
-    mat_filenames = [f for f in os.listdir(
-        unzipped_folder) if f.endswith(".mat")]
+    unzipped_folder = zip_folder.replace(".zip", "")  # remove the .zip extension
+    mat_filenames = [f for f in os.listdir(unzipped_folder) if f.endswith(".mat")]
     return [os.path.join(unzipped_folder, f) for f in mat_filenames]
 
 
-def process_mat_files_list(bin_id, files_list, file_check=True):
+def process_mat_files_list(
+    bin_id, files_list, file_check, area_correction, mm_order=MM_ORDER
+):
     count_maps_A0 = []
     count_maps_A1 = []
 
@@ -72,6 +66,8 @@ def process_mat_files_list(bin_id, files_list, file_check=True):
                 cc_data = mat_file["cc_struct"]["data"][0][0][0][0][0]
                 cc_data = np.mean(cc_data, axis=2)
                 count_map = cc_data[0, bin_id, :, :]
+                if area_correction:
+                    count_map = np.divide(count_map, pixel_area_norm)
 
                 if file.endswith("A0.mat"):
                     count_map = np.flip(count_map, axis=0)
@@ -86,24 +82,30 @@ def process_mat_files_list(bin_id, files_list, file_check=True):
             cc_data = np.mean(cc_data, axis=2)
             count_map = cc_data[0, bin_id, :, :]
 
+            if area_correction:
+                count_map = np.divide(count_map, pixel_area_norm)
+
             if file.name.endswith("A0.mat"):
                 count_map = np.flip(count_map, axis=0)
                 count_map = np.flip(count_map, axis=1)
+                # if area_correction:
+                #     count_map = np.divide(count_map, pixel_area_norm)
                 count_maps_A0.append(count_map)
             if file.name.endswith("A1.mat"):
+                # if area_correction:
+                #     count_map = np.divide(count_map, pixel_area_norm)
                 count_maps_A1.append(count_map)
 
     count_maps_A0 = np.array(count_maps_A0)
 
     count_maps_A0_comb = np.concatenate(count_maps_A0, axis=0)
     count_maps_A1_comb = np.concatenate(count_maps_A1, axis=0)
-    full_count_map = np.concatenate(
-        [count_maps_A0_comb, count_maps_A1_comb], axis=1)
+    full_count_map = np.concatenate([count_maps_A0_comb, count_maps_A1_comb], axis=1)
 
     return count_maps_A0, count_maps_A1, full_count_map
 
 
-def process_mat_files_folder(bin_id, folder):
+def process_mat_files_folder(bin_id, folder, area_correction=True):
     count_maps_A0 = []
     count_maps_A1 = []
 
@@ -118,6 +120,8 @@ def process_mat_files_folder(bin_id, folder):
             # print(f"{cc_data.shape = }")
 
             count_map = cc_data[0, bin_id, :, :]
+            if area_correction:
+                count_map = np.divide(count_map, pixel_area_norm)
             # print(count_map.shape)
 
             if file.endswith("A0.mat"):
@@ -132,8 +136,7 @@ def process_mat_files_folder(bin_id, folder):
 
     count_maps_A0_comb = np.concatenate(count_maps_A0, axis=0)
     count_maps_A1_comb = np.concatenate(count_maps_A1, axis=0)
-    full_count_map = np.concatenate(
-        [count_maps_A0_comb, count_maps_A1_comb], axis=1)
+    full_count_map = np.concatenate([count_maps_A0_comb, count_maps_A1_comb], axis=1)
 
     return count_maps_A0, count_maps_A1, full_count_map
 
@@ -240,6 +243,7 @@ def create_heatmaps_w_boxes(
 
     return fig
 
+
 # def get_data_info_v2(file_list, verbose=False):
 #     for file in file_list:
 
@@ -267,3 +271,6 @@ def create_heatmaps_w_boxes(
 #                 print(p)
 
 #         return cc_data_dict, params_info
+
+if __name__ == "__main__":
+    print(pixel_area)

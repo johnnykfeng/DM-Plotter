@@ -9,6 +9,8 @@ from utility_functions import (
     process_mat_files_list,
     create_plotly_heatmaps,
 )
+from config import MM_ORDER
+
 
 st.set_page_config(
     page_title="Basic MAT file viewer",
@@ -42,11 +44,14 @@ def create_heatmap(full_count_map, color_range, colormap="Viridis", invert_color
 
 
 @st.cache_data
-def cached_process_mat_files_list(bin_id, mat_files, file_check=False):
-    return process_mat_files_list(bin_id, mat_files, file_check)
+def cached_process_mat_files_list(
+    bin_id, mat_files, file_check=False, area_correction=True
+):
+    return process_mat_files_list(bin_id, mat_files, file_check, area_correction)
 
 
 with st.sidebar:
+    area_correction_checkbox = st.checkbox("Area correction")
     colormap = st.radio("Colormap", ["Viridis", "Jet", "Plasma", "Magma"])
     invert_color = st.checkbox("Invert color")
     bin_selection = st.multiselect(
@@ -58,6 +63,7 @@ with st.sidebar:
 
     color_pctl_0 = st.slider("Lower color range by percentile", 0.0, 5.0, (1.0))
     color_pctl_1 = st.slider("Upper color range by percentile", 95.0, 99.9, (99.5))
+    fig_height = st.slider("Figure height", 100, 1500, 600)
 
 
 if uploaded_files:
@@ -65,7 +71,12 @@ if uploaded_files:
 
     st.write(uploaded_files[0].name)
     extracted_files = [file for file in uploaded_files]
-    file_type = type(extracted_files[0])
+    # Reorder the extracted_files list based on MM_ORDER
+    extracted_files.sort(
+        key=lambda x: MM_ORDER.index(x.name.split("-")[0])
+        if x.name.split("-")[0] in MM_ORDER
+        else ValueError("File not in MM_ORDER")
+    )
 
     with st.expander("Metadata", expanded=False):
         msgs, params_info, params = get_data_info(extracted_files, check_mat=False)
@@ -81,7 +92,10 @@ if uploaded_files:
 
     for i, bin_id in enumerate(bin_selection):
         _, _, full_count_map = cached_process_mat_files_list(
-            bin_id, extracted_files, file_check=False
+            bin_id,
+            extracted_files,
+            file_check=False,
+            area_correction=area_correction_checkbox,
         )
 
         color_min, color_max = np.percentile(
@@ -96,5 +110,5 @@ if uploaded_files:
         heatmap_fig = create_heatmap(
             full_count_map, color_range, colormap, invert_color
         )
-        heatmap_fig.update_layout(autosize=False, width=400, height=600)
+        heatmap_fig.update_layout(autosize=True, width=400, height=fig_height)
         st.plotly_chart(heatmap_fig, key=f"heatmap_{bin_id}")
