@@ -7,3 +7,5 @@
 
 /IGNORE
 /.venv
+
+/.streamlit
