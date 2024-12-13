@@ -7,10 +7,11 @@ from utility_functions import (
     BIN_LABELS,
     process_mat_files_list,
     create_plotly_heatmaps,
+    sort_module_order
 )
 
 st.set_page_config(
-    page_title="Compare 2 sets of DM data, [DM1 - DM2]",
+    page_title="Compare 2 sets of DM data",
     page_icon=":bar_chart:",
     layout="wide",
 )
@@ -29,14 +30,15 @@ def create_heatmap(full_count_map, color_range, colormap="Viridis", invert_color
     return heatmap_fig
 
 @st.cache_data
-def cached_process_mat_files_list(bin_id, mat_files, file_check=False):
-    return process_mat_files_list(bin_id, mat_files, file_check)
+def cached_process_mat_files_list(bin_id, mat_files, file_check=False, area_correction=False):
+    return process_mat_files_list(bin_id, mat_files, file_check, area_correction)
 
 
 def bin_id_to_label(bin_id):
     return BIN_LABELS[bin_id]
 
 with st.sidebar:
+    area_correction_checkbox = st.checkbox("Apply area correction")
     colormap = st.radio("Colormap", ["Viridis", "Jet", "Plasma", "Magma"])
     invert_color = st.checkbox("Invert color")
     bin_selection = st.multiselect(
@@ -73,6 +75,7 @@ with cols[0]:
         # st.write("Files uploaded successfully")
         with st.spinner("**PROCESSING FILES...**"):
             test_files = [file for file in test_data]
+            test_files = sort_module_order(test_files)
 
         with st.expander("Extracted files and folders", expanded=False):
             for file in test_files:
@@ -80,7 +83,7 @@ with cols[0]:
 
         for i, bin_id in enumerate(bin_selection):
             _, _, test_count_map = cached_process_mat_files_list(
-                bin_id, test_files, file_check=False
+                bin_id, test_files, file_check=False, area_correction=area_correction_checkbox
             )
 
             color_min, color_max = np.percentile(
@@ -106,6 +109,7 @@ with cols[1]:
     if test_data_2:
         with st.spinner("**PROCESSING FILES...**"):
             test_files_2 = [file for file in test_data_2]
+            test_files_2 = sort_module_order(test_files_2)
 
         with st.expander("Extracted files and folders", expanded=False):
             for file in test_files_2:
@@ -113,7 +117,7 @@ with cols[1]:
         
         for i, bin_id in enumerate(bin_selection):
             _, _, test_count_map_2 = cached_process_mat_files_list(
-                bin_id, test_files_2, file_check=False
+                bin_id, test_files_2, file_check=False, area_correction=area_correction_checkbox
             )
 
             color_min, color_max = np.percentile(
@@ -142,10 +146,10 @@ with cols[2]:
         with st.spinner("**PROCESSING FILES...**"):
             for i, bin_id in enumerate(bin_selection):
                 _, _, test_count_map = cached_process_mat_files_list(
-                    bin_id, test_files, file_check=False
+                    bin_id, test_files, file_check=False, area_correction=area_correction_checkbox
                 )
                 _, _, test_count_map_2 = cached_process_mat_files_list(
-                    bin_id, test_files_2, file_check=False
+                    bin_id, test_files_2, file_check=False, area_correction=area_correction_checkbox
                 )
                 
                 # avoid division by zero

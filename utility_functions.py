@@ -9,6 +9,14 @@ pixel_area = scipy.io.loadmat(r"pixel_area_xmed.mat")["pixel_area"]
 pixel_area_norm = pixel_area / np.max(pixel_area)
 
 
+def sort_module_order(files: list, module_order=MM_ORDER):
+    files.sort(
+        key=lambda x: module_order.index(x.name.split("-")[0])
+        if x.name.split("-")[0] in module_order
+        else ValueError("File not in module order")
+    )
+    return files
+
 def get_data_info(file_list, verbose=False, check_mat=True):
     for file in file_list:
         if not check_mat:

@@ -1,12 +1,10 @@
 import streamlit as st
-import os
 import numpy as np
-import scipy.io
-import plotly.express as px
 from utility_functions import (
     BIN_LABELS,
     process_mat_files_list,
     create_plotly_heatmaps,
+    sort_module_order
 )
 from config import MM_ORDER
 
@@ -42,15 +40,6 @@ def cached_process_mat_files_list(bin_id, mat_files, file_check=False, area_corr
 
 def bin_id_to_label(bin_id):
     return BIN_LABELS[bin_id]
-
-
-def sort_module_order(files, module_order=MM_ORDER):
-    files.sort(
-        key=lambda x: module_order.index(x.name.split("-")[0])
-        if x.name.split("-")[0] in module_order
-        else ValueError("File not in module order")
-    )
-    return files
 
 
 with st.sidebar:
