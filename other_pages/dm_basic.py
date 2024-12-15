@@ -51,7 +51,8 @@ def cached_process_mat_files_list(
 
 with st.sidebar:
     area_correction_checkbox = st.checkbox("Apply area correction")
-    colormap = st.radio("Colormap", ["Viridis", "Jet", "Plasma", "Magma"])
+    # colormap = st.radio("Colormap", ["Viridis", "Jet", "Plasma", "Magma"])
+    colormap = st.selectbox("Colormap", ["Viridis", "Haline", "Bluyl", "Ice", "Cividis", "Jet", "Plasma", "Magma"])
     invert_color = st.checkbox("Invert color")
     bin_selection = st.multiselect(
         "Select bins",
