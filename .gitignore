@@ -1,5 +1,6 @@
 /DATA
 /__pycache__
+pages/__pycache__
 .vscode
 *.pyc
 
