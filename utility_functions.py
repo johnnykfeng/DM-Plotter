@@ -60,49 +60,39 @@ def unzip_mat_files(zip_folder):
     mat_filenames = [f for f in os.listdir(unzipped_folder) if f.endswith(".mat")]
     return [os.path.join(unzipped_folder, f) for f in mat_filenames]
 
+def get_number_of_frames(file_name):
+    mat_file = scipy.io.loadmat(file_name)
+    cc_data = mat_file["cc_struct"]["data"][0][0][0][0][0]
+    return cc_data.shape[2]
 
 def process_mat_files_list(
-    bin_id, files_list, file_check, area_correction, mm_order=MM_ORDER
+    bin_id, files_list, file_check, area_correction, frame:int = None, mm_order=MM_ORDER
 ):
     count_maps_A0 = []
     count_maps_A1 = []
 
     for file in files_list:
         if file_check:
-            if file.endswith(".mat"):
-                mat_file = scipy.io.loadmat(file)
-                cc_data = mat_file["cc_struct"]["data"][0][0][0][0][0]
-                cc_data = np.mean(cc_data, axis=2)
-                count_map = cc_data[0, bin_id, :, :]
-                if area_correction:
-                    count_map = np.divide(count_map, pixel_area_norm)
-
-                if file.endswith("A0.mat"):
-                    count_map = np.flip(count_map, axis=0)
-                    count_map = np.flip(count_map, axis=1)
-                    count_maps_A0.append(count_map)
-                if file.endswith("A1.mat"):
-                    count_maps_A1.append(count_map)
-
+            if not file.endswith(".mat"):
+                raise ValueError(f"File {file} does not have a .mat extension")
+            
+        mat_file = scipy.io.loadmat(file)
+        cc_data = mat_file["cc_struct"]["data"][0][0][0][0][0]
+        if frame is not None:
+            cc_data = cc_data[:, :, frame, :, :]
         else:
-            mat_file = scipy.io.loadmat(file)
-            cc_data = mat_file["cc_struct"]["data"][0][0][0][0][0]
             cc_data = np.mean(cc_data, axis=2)
-            count_map = cc_data[0, bin_id, :, :]
+        count_map = cc_data[0, bin_id, :, :]
 
-            if area_correction:
-                count_map = np.divide(count_map, pixel_area_norm)
+        if area_correction:
+            count_map = np.divide(count_map, pixel_area_norm)
 
-            if file.name.endswith("A0.mat"):
-                count_map = np.flip(count_map, axis=0)
-                count_map = np.flip(count_map, axis=1)
-                # if area_correction:
-                #     count_map = np.divide(count_map, pixel_area_norm)
-                count_maps_A0.append(count_map)
-            if file.name.endswith("A1.mat"):
-                # if area_correction:
-                #     count_map = np.divide(count_map, pixel_area_norm)
-                count_maps_A1.append(count_map)
+        if file.name.endswith("A0.mat"):
+            count_map = np.flip(count_map, axis=0)
+            count_map = np.flip(count_map, axis=1)
+            count_maps_A0.append(count_map)
+        if file.name.endswith("A1.mat"):
+            count_maps_A1.append(count_map)
 
     count_maps_A0 = np.array(count_maps_A0)
 
