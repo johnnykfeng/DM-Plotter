@@ -17,7 +17,7 @@ def sort_module_order(files: list, module_order=MM_ORDER):
     )
     return files
 
-def get_data_info(file_list, verbose=False, check_mat=True):
+def get_data_info(file_list, verbose=False, check_mat=False):
     for file in file_list:
         if not check_mat:
             mat_file = scipy.io.loadmat(file)

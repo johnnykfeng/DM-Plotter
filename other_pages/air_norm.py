@@ -4,7 +4,8 @@ from utility_functions import (
     BIN_LABELS,
     process_mat_files_list,
     create_plotly_heatmaps,
-    sort_module_order
+    sort_module_order,
+    get_number_of_frames
 )
 from config import MM_ORDER
 
@@ -34,8 +35,8 @@ def cached_create_heatmap(
 
 
 @st.cache_data
-def cached_process_mat_files_list(bin_id, mat_files, file_check=False, area_correction=False):
-    return process_mat_files_list(bin_id, mat_files, file_check, area_correction)
+def cached_process_mat_files_list(bin_id, mat_files, file_check=False, area_correction=False, frame:int = None):
+    return process_mat_files_list(bin_id, mat_files, file_check, area_correction, frame)
 
 
 def bin_id_to_label(bin_id):
@@ -83,6 +84,13 @@ with cols[0]:
         with st.spinner("**PROCESSING FILES...**"):
             test_files = [file for file in test_data]
             test_files = sort_module_order(test_files)
+        
+        
+        max_frames = get_number_of_frames(test_files[0])
+        frame = st.sidebar.slider("Frame", 0, max_frames-1, 0)
+        average_over_frames = st.sidebar.checkbox("Average over frames", value=False)
+        if average_over_frames:
+            frame = None
 
         with st.expander("Extracted files and folders", expanded=False):
             for file in test_files:
@@ -90,7 +98,7 @@ with cols[0]:
 
         for i, bin_id in enumerate(bin_selection):
             _, _, test_count_map = cached_process_mat_files_list(
-                bin_id, test_files, file_check=False, area_correction=area_correction_checkbox
+                bin_id, test_files, file_check=False, area_correction=area_correction_checkbox, frame=frame
             )
 
             color_min, color_max = np.percentile(
@@ -159,7 +167,7 @@ with cols[2]:
         with st.spinner("**PROCESSING FILES...**"):
             for i, bin_id in enumerate(bin_selection):
                 _, _, test_count_map = cached_process_mat_files_list(
-                    bin_id, test_files, file_check=False, area_correction=area_correction_checkbox
+                    bin_id, test_files, file_check=False, area_correction=area_correction_checkbox, frame=frame
                 )
                 _, _, air_norm_count_map = cached_process_mat_files_list(
                     bin_id, air_norm_files, file_check=False, area_correction=area_correction_checkbox
